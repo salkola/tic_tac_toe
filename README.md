@@ -92,9 +92,9 @@ Each row in `output/metrics.csv` is recorded every `eval_every` self-play games 
 | Column | Meaning |
 |--------|---------|
 | `episode` | Self-play game index (0 is the post-pretrain baseline eval) |
-| `train_reward_mean` | Mean self-play outcome over the rolling window (+1 / 0 / −1) |
+| `train_reward_mean` | Mean self-play outcome over the rolling window (+1 win, 0 draw, −1 loss for the agent) |
 | `policy_loss_mean` | Cross-entropy vs MCTS visit distribution |
-| `value_loss_mean` | MSE vs game outcome (+1 / 0 / −1) |
+| `value_loss_mean` | MSE vs game outcome (+1 win, 0 draw, −1 loss for the player to move) |
 | `total_loss_mean` | Policy + value loss |
 | `win_rate_random` | Win rate vs random opponent |
 | `draw_rate_random` | Draw rate vs random opponent |
@@ -112,12 +112,34 @@ Each row in `output/metrics.csv` is recorded every `eval_every` self-play games 
 
 ## How policy-value MCTS training works
 
+### Board input vs value output
+
+The network uses two different +1 / 0 / −1 scales.
+
+**Board input**: Nine numbers, one per cell, from the **current player’s** point of view:
+
+| Value | Meaning |
+|-------|---------|
+| **+1** | Current player’s mark (X or O) |
+| **−1** | Opponent’s mark |
+| **0** | Empty cell |
+
+**Value output and training labels**: One number for how the game ends **for the current player**:
+
+| Value | Meaning |
+|-------|---------|
+| **+1** | Win |
+| **0** | Draw |
+| **−1** | Loss |
+
+The value head predicts the second scale. Self-play rewards, expert labels, and `value_loss_mean` all use it.
+
 ### Policy + value network
 
-The network takes a 9-cell board (player-relative: +1 / -1 / 0) and outputs:
+The network reads the 9-cell board encoding above and outputs:
 
-- **Policy** $p(a|s)$ — prior over moves
-- **Value** $V(s)$ — expected outcome from $-1$ (loss) to $+1$ (win)
+- **Policy** $p(a|s)$: Prior over legal moves
+- **Value** $V(s)$: Expected outcome for the current player on the win / draw / loss scale above
 
 ### MCTS
 
@@ -134,8 +156,8 @@ The move with the most visits is played. At play time this gives lookahead witho
 
 Each self-play game produces $(s, \pi_{MCTS}, z)$ examples:
 
-- $\pi_{MCTS}$ — MCTS visit distribution (improved policy target)
-- $z$ — final game outcome from that state's player view
+- $\pi_{MCTS}$: MCTS visit distribution (improved policy target)
+- $z$: Final game outcome for the player who was to move in state $s$ (+1 win, 0 draw, −1 loss)
 
 Loss:
 
@@ -170,7 +192,7 @@ Training losses fall over self-play (game 100 → game 3000):
 - **Value loss**: ~0.78 → ~0.08
 - **Total loss**: ~2.47 → ~1.20
 
-The value head converges faster than the policy head because game outcomes (+1 / 0 / −1) are a simpler target than full MCTS visit distributions.
+The value head converges faster than the policy head because win / draw / loss labels (+1 / 0 / −1) are a simpler target than full MCTS visit distributions.
 
 ### What the curves mean
 
@@ -201,7 +223,7 @@ Search amplifies a weak network into better move choices, and self-play generate
 Before self-play, the agent can train on positions labeled by a perfect minimax solver (~4,500 reachable boards). Each example provides:
 
 - A **policy target** derived from optimal play (prioritizing immediate wins and blocks)
-- A **value target** (+1 / 0 / −1) from the solver
+- A **value target** on the outcome scale (+1 win, 0 draw, −1 loss) from the solver
 
 This bootstraps tactics that self-play alone takes many games to discover. With `expert_sample_ratio > 0`, the agent already draws vs minimax after pretrain; self-play then refines estimates rather than learning basics from scratch.
 
