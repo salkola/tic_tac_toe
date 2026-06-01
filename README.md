@@ -136,10 +136,12 @@ The value head predicts the second scale. Self-play rewards, expert labels, and 
 
 ### Policy + value network
 
-The network reads the 9-cell board encoding above and outputs:
+Here $s$ is the **state**: the board encoded from the current player’s perspective. $a$ is an **action**: which cell to play (indices 0–8).
 
-- **Policy** $p(a|s)$: Prior over legal moves
-- **Value** $V(s)$: Expected outcome for the current player on the win / draw / loss scale above
+The network reads $s$ and outputs:
+
+- **Policy** $p(a|s)$: Probability (prior) over legal moves $a$ in state $s$
+- **Value** $V(s)$: Expected outcome for the current player in state $s$ on the win / draw / loss scale above
 
 ### MCTS
 
@@ -156,8 +158,8 @@ The move with the most visits is played. At play time this gives lookahead witho
 
 Each self-play game produces $(s, \pi_{MCTS}, z)$ examples:
 
-- $\pi_{MCTS}$: MCTS visit distribution (improved policy target)
-- $z$: Final game outcome for the player who was to move in state $s$ (+1 win, 0 draw, −1 loss)
+- $\pi_{MCTS}$: MCTS visit distribution over actions $a$ (improved policy target)
+- $z$: Final game outcome for the player to move in $s$ (+1 win, 0 draw, −1 loss)
 
 Loss:
 
