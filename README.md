@@ -40,7 +40,7 @@ Training writes to `output/` in the project root (printed at startup as `Writing
 Edit `config.py` to change hyperparameters. All fields on `TrainConfig`:
 
 | Setting | Default | Role |
-|---------|---------|------|
+|---------|:---------:|------|
 | `seed` | 42 | Random seed for NumPy, PyTorch, and sampling |
 | `num_episodes` | 3000 | Self-play games after optional pretrain |
 | `expert_sample_ratio` | 0.0 | Fraction of minimax-labeled positions for pretrain (0 skips pretrain) |
