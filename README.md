@@ -119,7 +119,7 @@ The network uses two different +1 / 0 / −1 scales.
 **Board input**: Nine numbers, one per cell, from the **current player’s** point of view:
 
 | Value | Meaning |
-|-------|---------|
+|:-------:|---------|
 | **+1** | Current player’s mark (X or O) |
 | **−1** | Opponent’s mark |
 | **0** | Empty cell |
@@ -127,7 +127,7 @@ The network uses two different +1 / 0 / −1 scales.
 **Value output and training labels**: One number for how the game ends **for the current player**:
 
 | Value | Meaning |
-|-------|---------|
+|:-------:|---------|
 | **+1** | Win |
 | **0** | Draw |
 | **−1** | Loss |
@@ -176,7 +176,7 @@ The plots in `output/learning_curves.png` and rows in `output/metrics.csv` are f
 ### Performance over training
 
 | Phase | Win vs random | Draw vs random | Loss vs random | Draw vs minimax | Loss vs minimax |
-|-------|---------------|----------------|----------------|-----------------|-----------------|
+|:------|:-------------:|:--------------:|:--------------:|:---------------:|:---------------:|
 | Start (game 0) | 67% | 16% | 17% | 0% | 100% |
 | Mid (game 500) | 76% | 9% | 15% | **100%** | 0% |
 | Late (game 1200) | **99%** | 1% | 0% | **100%** | 0% |
