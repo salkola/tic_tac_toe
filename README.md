@@ -141,8 +141,8 @@ Here $s$ is the **state**: the board encoded from the current player’s perspec
 
 The network reads $s$ and outputs:
 
-- **Policy** $p(a|s)$ — probability (prior) over legal moves $a$ in state $s$
-- **Value** $V(s)$ — expected outcome for the current player in state $s$ on the win / draw / loss scale above
+- **Policy** $p(a|s)$: Probability (prior) over legal moves $a$ in state $s$
+- **Value** $V(s)$: Expected outcome for the current player in state $s$ on the win / draw / loss scale above
 
 The trunk has four blocks, each **Linear → LayerNorm → ReLU → Dropout**. LayerNorm stabilizes activations across the hidden units for each board state. Dropout (rate `dropout` in `config.py`, default 0.1) regularizes training only; MCTS and play use the inference network in eval mode, so dropout is disabled at test time.
 
