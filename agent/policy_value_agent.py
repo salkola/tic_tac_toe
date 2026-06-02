@@ -31,6 +31,7 @@ class PolicyValueAgent:
         self,
         *,
         hidden_dim: int,
+        dropout: float,
         learning_rate: float,
         replay_size: int,
         batch_size: int,
@@ -46,6 +47,7 @@ class PolicyValueAgent:
         device: torch.device | None = None,
     ) -> None:
         self.batch_size = batch_size
+        self.dropout = dropout
         self.mcts_simulations = mcts_simulations
         self.mcts_eval_simulations = mcts_eval_simulations
         self.mcts_play_simulations = mcts_play_simulations
@@ -59,8 +61,8 @@ class PolicyValueAgent:
         self.recent_value_losses: list[float] = []
         self.recent_total_losses: list[float] = []
 
-        self.net = PolicyValueNet(hidden_dim).to(self.device)
-        self.inference_net = PolicyValueNet(hidden_dim).to(self.device)
+        self.net = PolicyValueNet(hidden_dim, dropout=dropout).to(self.device)
+        self.inference_net = PolicyValueNet(hidden_dim, dropout=dropout).to(self.device)
         self.inference_net.load_state_dict(self.net.state_dict())
         self.net.eval()
         self.inference_net.eval()
@@ -299,6 +301,7 @@ class PolicyValueAgent:
         payload: dict = {
             "policy_value_state_dict": self.inference_net.state_dict(),
             "hidden_dim": self.inference_net.trunk[0].out_features,
+            "dropout": self.dropout,
             "architecture": ARCHITECTURE_NAME,
             "mcts_play_simulations": self.mcts_play_simulations,
             "c_puct": self.mcts.c_puct,
@@ -323,6 +326,7 @@ class PolicyValueAgent:
         hidden_dim = int(checkpoint["hidden_dim"])
         agent = cls(
             hidden_dim=hidden_dim,
+            dropout=float(checkpoint.get("dropout", 0.1)),
             learning_rate=1e-4,
             replay_size=1,
             batch_size=1,

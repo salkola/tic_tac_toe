@@ -64,6 +64,7 @@ Edit `config.py` to change hyperparameters. All fields on `TrainConfig`:
 | `eval_games` | 100 | Games per random/minimax eval batch |
 | `rolling_window` | 100 | Window for logged training loss and reward |
 | `hidden_dim` | 128 | Policy-value network width |
+| `dropout` | 0.1 | Dropout in trunk during training (0 disables; inference uses eval mode, so dropout is off) |
 | `grad_clip` | 1.0 | Gradient norm clip |
 | `ema_decay` | 0.999 | EMA decay for inference network |
 | `early_stop_evals` | 10000 | Stop if eval score does not improve for this many evals |
@@ -140,8 +141,10 @@ Here $s$ is the **state**: the board encoded from the current player’s perspec
 
 The network reads $s$ and outputs:
 
-- **Policy** $p(a|s)$: Probability (prior) over legal moves $a$ in state $s$
-- **Value** $V(s)$: Expected outcome for the current player in state $s$ on the win / draw / loss scale above
+- **Policy** $p(a|s)$ — probability (prior) over legal moves $a$ in state $s$
+- **Value** $V(s)$ — expected outcome for the current player in state $s$ on the win / draw / loss scale above
+
+The trunk has four blocks, each **Linear → LayerNorm → ReLU → Dropout**. LayerNorm stabilizes activations across the hidden units for each board state. Dropout (rate `dropout` in `config.py`, default 0.1) regularizes training only; MCTS and play use the inference network in eval mode, so dropout is disabled at test time.
 
 ### MCTS
 
@@ -171,7 +174,7 @@ $$
 
 ## Results
 
-The plots in `output/learning_curves.png` and rows in `output/metrics.csv` are from the latest run with current `config.py` defaults: **3,000** self-play games, `seed=42`, `eval_every=100`, `expert_sample_ratio=0` (no pretrain), `mcts_simulations=15`, and `mcts_eval_simulations=0`.
+The plots in `output/learning_curves.png` and rows in `output/metrics.csv` are from the latest run with current `config.py` defaults: **3,000** self-play games, `seed=42`, `eval_every=100`, `expert_sample_ratio=0` (no pretrain), `mcts_simulations=15`, `mcts_eval_simulations=0`, and a trunk with **LayerNorm** and **dropout=0.1**.
 
 ![Policy-value MCTS training curves](output/learning_curves.png)
 
@@ -179,20 +182,20 @@ The plots in `output/learning_curves.png` and rows in `output/metrics.csv` are f
 
 | Phase | Win vs random | Draw vs random | Loss vs random | Draw vs minimax | Loss vs minimax |
 |:------|:-------------:|:--------------:|:--------------:|:---------------:|:---------------:|
-| Start (game 0) | 67% | 16% | 17% | 0% | 100% |
-| Mid (game 500) | 76% | 9% | 15% | **100%** | 0% |
-| Late (game 1200) | **99%** | 1% | 0% | **100%** | 0% |
-| Final (game 3000) | 95% | 5% | 0% | **100%** | **0%** |
+| Start (game 0) | 54% | 11% | 35% | 0% | 100% |
+| Mid (game 500) | 92% | 2% | 6% | 0% | 100% |
+| Late (game 1200) | 98% | 2% | 0% | **100%** | 0% |
+| Final (game 3000) | 99% | 1% | 0% | **100%** | **0%** |
 
-Against random, the agent reaches high win rates by mid-training and keeps `loss_rate_random` near zero at the end. Against perfect minimax, `draw_rate_minimax` is already **100%** by game 100 in this run; there is a brief regression around games 600–1000 where `loss_rate_minimax` spikes again before stabilizing. A draw against perfect play is the best possible outcome at tic-tac-toe scale.
+Against random, win rate rises through mid-training and `loss_rate_random` reaches **0%** by game 1000. Against perfect minimax, `draw_rate_minimax` reaches **100%** around game 800 and stays there; a draw is the best possible outcome at tic-tac-toe scale.
 
 ### Loss curves
 
 Training losses fall over self-play (game 100 → game 3000):
 
-- **Policy loss**: ~1.70 → ~1.12
-- **Value loss**: ~0.78 → ~0.08
-- **Total loss**: ~2.47 → ~1.20
+- **Policy loss**: ~1.72 → ~1.09
+- **Value loss**: ~0.63 → ~0.10
+- **Total loss**: ~2.35 → ~1.19
 
 The value head converges faster than the policy head because win / draw / loss labels (+1 / 0 / −1) are a simpler target than full MCTS visit distributions.
 

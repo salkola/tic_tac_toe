@@ -5,18 +5,22 @@ from torch import nn
 
 
 class PolicyValueNet(nn.Module):
-    def __init__(self, hidden_dim: int = 128) -> None:
+    def __init__(self, hidden_dim: int = 128, dropout: float = 0.1) -> None:
         super().__init__()
-        self.trunk = nn.Sequential(
-            nn.Linear(9, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-        )
+        layers: list[nn.Module] = []
+        in_dim = 9
+        for _ in range(4):
+            layers.extend(
+                [
+                    nn.Linear(in_dim, hidden_dim),
+                    nn.LayerNorm(hidden_dim),
+                    nn.ReLU(),
+                ]
+            )
+            if dropout > 0:
+                layers.append(nn.Dropout(dropout))
+            in_dim = hidden_dim
+        self.trunk = nn.Sequential(*layers)
         self.policy_head = nn.Linear(hidden_dim, 9)
         self.value_head = nn.Linear(hidden_dim, 1)
 

@@ -117,6 +117,7 @@ def train(config: TrainConfig = DEFAULT_CONFIG) -> None:
     minimax_opponent = MinimaxOpponent()
     agent = PolicyValueAgent(
         hidden_dim=config.hidden_dim,
+        dropout=config.dropout,
         learning_rate=config.learning_rate,
         replay_size=config.replay_size,
         batch_size=config.batch_size,

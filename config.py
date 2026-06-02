@@ -55,6 +55,7 @@ class TrainConfig:
     eval_games: int = 100
     rolling_window: int = 100
     hidden_dim: int = 128
+    dropout: float = 0.1
     grad_clip: float = 1.0
     ema_decay: float = 0.999
     early_stop_evals: int = 10000
